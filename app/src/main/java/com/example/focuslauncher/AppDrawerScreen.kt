@@ -1,6 +1,20 @@
 package com.example.focuslauncher
 
-// ui/AppDrawerScreen.kt
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
 @Composable
 fun AppDrawerScreen(
     apps: List<AppInfo>,
@@ -12,7 +26,7 @@ fun AppDrawerScreen(
     val filteredApps = remember(searchQuery, apps) {
         if (searchQuery.isBlank()) apps
         else apps.filter {
-            it.name.contains(searchQuery, ignoreCase = true)
+            it.label.contains(searchQuery, ignoreCase = true) // fixed: .name → .label
         }
     }
 
@@ -41,7 +55,11 @@ fun AppDrawerScreen(
 }
 
 @Composable
-fun SearchBar(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
@@ -60,7 +78,9 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit, modifier: Modifier
             focusedContainerColor = Color.White.copy(alpha = 0.15f),
             unfocusedContainerColor = Color.White.copy(alpha = 0.1f),
             focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            unfocusedTextColor = Color.White,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
         ),
         modifier = modifier
     )
