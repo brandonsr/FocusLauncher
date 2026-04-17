@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusLauncher — Reclaim Your Attention</title>
+  <meta name="description" content="FocusLauncher is a minimalist Android launcher that helps you stay off your phone, reduce distractions, and reclaim your focus every day." />
+  <meta property="og:title" content="FocusLauncher — Reclaim Your Attention" />
+  <meta property="og:description" content="A minimalist Android launcher built for deep focus and intentional phone use." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar" class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo" id="nav-logo">
+        <span class="logo-dot"></span>FocusLauncher
+      </a>
+      <a href="#download" class="nav-cta" id="nav-download-btn">Download</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-content">
+      <div class="hero-badge" id="hero-badge">
+        <span class="badge-pulse"></span>
+        Open Source · Android
+      </div>
+      <h1 class="hero-title" id="hero-title">
+        Your phone.<br />
+        <em>On your terms.</em>
+      </h1>
+      <p class="hero-subtitle" id="hero-subtitle">
+        A launcher that helps you stop scrolling, stay present,
+        and use your phone with intention — not impulse.
+      </p>
+      <div class="hero-actions" id="hero-actions">
+        <a href="#download" class="btn btn-primary" id="hero-download-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          Get on Google Play
+        </a>
+        <a href="#features" class="btn btn-ghost" id="hero-learn-btn">See how it works</a>
+      </div>
+    </div>
+    <div class="hero-visual" id="hero-visual">
+      <div class="phone-glow"></div>
+      <img src="phone_mockup.png" alt="FocusLauncher home screen showing a minimal clock interface" class="phone-img" id="phone-img" />
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats" id="stats">
+    <div class="stats-inner">
+      <div class="stat-item" id="stat-1">
+        <span class="stat-number" data-target="73">0</span><span class="stat-suffix">%</span>
+        <p class="stat-label">of users report fewer mindless unlocks</p>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item" id="stat-2">
+        <span class="stat-number" data-target="2">0</span><span class="stat-suffix">h</span>
+        <p class="stat-label">average screen time reduction per day</p>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item" id="stat-3">
+        <span class="stat-number" data-target="100">0</span><span class="stat-suffix">%</span>
+        <p class="stat-label">free &amp; open source, always</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="section-header">
+      <span class="section-tag">How it works</span>
+      <h2 class="section-title">Designed to get out of your way</h2>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card" id="feature-1">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 class="feature-title">Clock-first home screen</h3>
+        <p class="feature-desc">Your home screen shows only the time. No feeds, no notifications, no infinite scroll. Just clarity.</p>
+      </div>
+
+      <div class="feature-card" id="feature-2">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3 class="feature-title">App allow-listing</h3>
+        <p class="feature-desc">Choose only the apps that deserve your attention. Everything else stays hidden — accessible, but not tempting.</p>
+      </div>
+
+      <div class="feature-card" id="feature-3">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <h3 class="feature-title">Distraction blocker</h3>
+        <p class="feature-desc">Set focus sessions and lock yourself out of distracting apps. Your future self will thank you.</p>
+      </div>
+
+      <div class="feature-card" id="feature-4">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3 class="feature-title">Screen time insights</h3>
+        <p class="feature-desc">Simple, honest stats about your daily usage. No shame — just awareness to help you improve gradually.</p>
+      </div>
+
+      <div class="feature-card" id="feature-5">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <h3 class="feature-title">Light &amp; dark modes</h3>
+        <p class="feature-desc">A grayscale palette keeps the UI calm and intentionally understimulating — beautiful in any light.</p>
+      </div>
+
+      <div class="feature-card" id="feature-6">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3 class="feature-title">Minimal widget support</h3>
+        <p class="feature-desc">Add only what matters — a task, the weather, a quote. No clutter. Every pixel earns its place.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PHILOSOPHY -->
+  <section class="philosophy" id="philosophy">
+    <div class="philosophy-inner">
+      <blockquote class="philosophy-quote" id="philosophy-quote">
+        <span class="quote-mark">"</span>
+        The best tool is one you barely notice.<br />
+        FocusLauncher is the phone experience<br />
+        that respects your time.
+        <span class="quote-mark">"</span>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- HOW IT COMPARES -->
+  <section class="compare" id="compare">
+    <div class="section-header">
+      <span class="section-tag">Comparison</span>
+      <h2 class="section-title">Not just another launcher</h2>
+    </div>
+    <div class="compare-table-wrap">
+      <table class="compare-table" id="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="highlight-col">FocusLauncher</th>
+            <th>Standard Launchers</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Distraction-free home</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="cross">✗</span></td>
+          </tr>
+          <tr>
+            <td>App allow-listing</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="cross">✗</span></td>
+          </tr>
+          <tr>
+            <td>Built-in focus sessions</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="cross">✗</span></td>
+          </tr>
+          <tr>
+            <td>No ads, no tracking</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="cross">✗</span></td>
+          </tr>
+          <tr>
+            <td>Open source</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="cross">✗</span></td>
+          </tr>
+          <tr>
+            <td>Widgets &amp; customization</td>
+            <td class="highlight-col"><span class="check">✓</span></td>
+            <td><span class="check">✓</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD CTA -->
+  <section class="download" id="download">
+    <div class="download-inner">
+      <h2 class="download-title" id="download-title">Put the phone down.<br />Pick up your life.</h2>
+      <p class="download-subtitle" id="download-subtitle">Free. Open source. No strings attached.</p>
+      <div class="download-actions" id="download-actions">
+        <a href="#" class="btn btn-primary btn-lg" id="play-store-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.45c.39.22.84.22 1.23 0l11.5-6.63-2.58-2.58-10.15 9.21zm-1.05-19.9v19.01l10.38-9.51-10.38-9.5zm19.44 7.59l-2.5-1.44-2.9 2.65 2.9 2.66 2.53-1.46c.72-.42.72-1.99-.03-2.41zm-3.43 4.24l-11.5 6.63 2.58 2.58 11.5-6.63-2.58-2.58z"/></svg>
+          Download on Google Play
+        </a>
+        <a href="https://github.com/brandonsr/FocusLauncher" class="btn btn-outline" id="github-btn" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer">
+    <div class="footer-inner">
+      <span class="footer-logo">
+        <span class="logo-dot"></span>FocusLauncher
+      </span>
+      <p class="footer-copy">Built with intention. Open source &amp; free forever.</p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="https://github.com/brandonsr/FocusLauncher" target="_blank" rel="noopener" id="footer-github">GitHub</a>
+        <a href="#" id="footer-privacy">Privacy</a>
+        <a href="#" id="footer-contact">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
