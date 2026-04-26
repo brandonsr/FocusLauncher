@@ -2,12 +2,10 @@ package com.example.focuslauncher
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -25,39 +23,57 @@ import androidx.core.graphics.drawable.toBitmap
 
 @Composable
 fun HomeScreenContent(
-    apps: List<AppInfo>,
-    pinnedApps: List<AppInfo> = emptyList()
+    pinnedApps: List<AppInfo>,
+    musicState: MusicState?,
+    isListenerEnabled: Boolean,
+    onEnableListener: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit
 ) {
     val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        // App grid — takes all remaining space above the pinned row
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .systemBarsPadding()
+    ) {
+        // ── Clock ────────────────────────────────────────────────────────────
+        ClockWidget(
             modifier = Modifier
-                .weight(1f)
-                .padding(8.dp),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(apps) { app ->
-                AppIcon(
-                    app = app,
-                    onClick = { launchApp(context, app.packageName) }
-                )
-            }
-        }
+                .fillMaxWidth()
+                .padding(top = 64.dp)
+        )
 
-        // Pinned apps row — only shown when there's at least one pinned app
+        Spacer(Modifier.height(28.dp))
+
+        // ── Music widget ─────────────────────────────────────────────────────
+        MusicWidget(
+            musicState = musicState,
+            isListenerEnabled = isListenerEnabled,
+            onEnableListener = onEnableListener,
+            onPlayPause = onPlayPause,
+            onNext = onNext,
+            onPrevious = onPrevious,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        )
+
+        // ── Push dock to bottom ──────────────────────────────────────────────
+        Spacer(Modifier.weight(1f))
+
+        // ── Pinned dock ──────────────────────────────────────────────────────
         if (pinnedApps.isNotEmpty()) {
             HorizontalDivider(
-                color = Color.White.copy(alpha = 0.15f),
-                thickness = 1.dp
+                color = Color.White.copy(alpha = 0.08f),
+                thickness = 0.5.dp
             )
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 10.dp),
                 horizontalArrangement = Arrangement.Center,
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
@@ -71,6 +87,8 @@ fun HomeScreenContent(
         }
     }
 }
+
+// ─── Shared AppIcon composable (used here + AppDrawerScreen) ─────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

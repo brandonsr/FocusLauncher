@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -10,11 +9,10 @@
         </intent>
     </queries>
 
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.SET_WALLPAPER"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <application
-
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -23,12 +21,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FocusLauncher">
-        <activity android:name=".MainActivity"
+
+        <activity
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
             android:resumeWhilePausing="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -38,6 +37,7 @@
             </intent-filter>
         </activity>
 
+        <!-- Package change listener -->
         <receiver
             android:name=".PackageReceiver"
             android:exported="false">
@@ -49,6 +49,17 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+
+        <!-- Music widget: reads active media sessions via notification access -->
+        <service
+            android:name=".MusicNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

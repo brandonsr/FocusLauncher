@@ -1,5 +1,7 @@
 package com.example.focuslauncher
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -8,26 +10,31 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     val apps by appViewModel.apps.collectAsState()
     val pinnedPackages by appViewModel.pinnedPackages.collectAsState()
+    val musicState by appViewModel.musicState.collectAsState()
     var showDrawer by remember { mutableStateOf(false) }
 
-    // Resolve full AppInfo for each pinned package, preserving pin order
+    // Poll listener status so the widget updates automatically after the user
+    // grants access in Settings and returns to the launcher.
+    var isListenerEnabled by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            isListenerEnabled = appViewModel.isNotificationListenerEnabled()
+            delay(2000L)
+        }
+    }
+
     val pinnedApps = remember(apps, pinnedPackages) {
         pinnedPackages.mapNotNull { pkg -> apps.find { it.packageName == pkg } }
     }
@@ -40,8 +47,8 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
             .fillMaxSize()
             .pointerInput(showDrawer) {
                 detectHorizontalDragGestures(
-                    onDragStart = { dragAccumulator = 0f },
-                    onDragEnd = { dragAccumulator = 0f },
+                    onDragStart  = { dragAccumulator = 0f },
+                    onDragEnd    = { dragAccumulator = 0f },
                     onDragCancel = { dragAccumulator = 0f },
                     onHorizontalDrag = { change, dragAmount ->
                         change.consume()
@@ -61,15 +68,24 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
             }
     ) {
         HomeScreenContent(
-            apps = apps,
-            pinnedApps = pinnedApps
+            pinnedApps = pinnedApps,
+            musicState = musicState,
+            isListenerEnabled = isListenerEnabled,
+            onEnableListener = {
+                context.startActivity(
+                    Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                )
+            },
+            onPlayPause  = { appViewModel.playPause() },
+            onNext       = { appViewModel.nextTrack() },
+            onPrevious   = { appViewModel.previousTrack() }
         )
 
-        // Drawer slides in from the left (matches swipe-left-to-open feel)
+        // App drawer — slides in from the left on swipe-left
         AnimatedVisibility(
             visible = showDrawer,
-            enter = slideInHorizontally { fullWidth -> -fullWidth } + fadeIn(),
-            exit = slideOutHorizontally { fullWidth -> -fullWidth } + fadeOut()
+            enter = slideInHorizontally { -it } + fadeIn(),
+            exit  = slideOutHorizontally { -it } + fadeOut()
         ) {
             AppDrawerScreen(
                 apps = apps,
@@ -79,7 +95,7 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
                     showDrawer = false
                 },
                 onTogglePin = { app -> appViewModel.togglePin(app.packageName) },
-                onDismiss = { showDrawer = false }
+                onDismiss   = { showDrawer = false }
             )
         }
     }

@@ -1,7 +1,9 @@
 package com.example.focuslauncher
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Context
+import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +21,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _pinnedPackages = MutableStateFlow<List<String>>(loadPinnedPackages())
     val pinnedPackages: StateFlow<List<String>> = _pinnedPackages
 
-    private val packageReceiver = PackageReceiver(
-        onPackageChanged = { loadApps() }
-    )
+    // Music state flows from the singleton updated by MusicNotificationListener
+    val musicState: StateFlow<MusicState?> = MusicRepository.state
+
+    private val packageReceiver = PackageReceiver(onPackageChanged = { loadApps() })
 
     init {
         loadApps()
@@ -36,14 +39,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun togglePin(packageName: String) {
         val current = _pinnedPackages.value.toMutableList()
-        if (current.contains(packageName)) {
-            current.remove(packageName)
-        } else {
-            current.add(packageName)
-        }
+        if (current.contains(packageName)) current.remove(packageName)
+        else current.add(packageName)
         _pinnedPackages.value = current
         savePinnedPackages(current)
     }
+
+    // ── Music controls ────────────────────────────────────────────────────────
+
+    fun isNotificationListenerEnabled(): Boolean {
+        val cn = ComponentName(getApplication(), MusicNotificationListener::class.java)
+        val flat = Settings.Secure.getString(
+            getApplication<Application>().contentResolver,
+            "enabled_notification_listeners"
+        )
+        return flat?.contains(cn.flattenToString()) == true
+    }
+
+    fun playPause() = MusicRepository.playPause()
+    fun nextTrack() = MusicRepository.next()
+    fun previousTrack() = MusicRepository.previous()
+
+    // ── Persistence ───────────────────────────────────────────────────────────
 
     private fun loadPinnedPackages(): List<String> {
         val raw = prefs.getString("pinned_packages", "") ?: ""

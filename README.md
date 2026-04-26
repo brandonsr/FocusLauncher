@@ -1,91 +1,91 @@
 # Focus Launcher
 
-A clean, minimal Android home screen launcher built from scratch with **Kotlin** and **Jetpack Compose**.
+**Android Launcher that helps you not get distracted.**
+
+A clean, minimal Android home screen launcher built from scratch with **Kotlin** and **Jetpack Compose**. Designed with a pure black background and distraction-free interface to help you maintain focus.
+
+🌐 **[Visit the Website ](https://brandonsr.github.io/FocusLauncher/)**
 
 ---
 
 ## Features
 
-- 🏠 **Home screen** — displays all installed apps in a 4-column alphabetical grid
-- 🔍 **App drawer** — swipe up from the home screen to reveal a full-screen drawer with real-time search
-- 🖼️ **Wallpaper support** — system wallpaper shows through the launcher background
-- 🔄 **Auto-refresh** — app list updates automatically when apps are installed, removed, or changed
-- ⬅️ **Back button suppressed** — proper launcher behavior: back press does nothing on the home screen
-- 📱 **Edge-to-edge UI** — full-screen immersive layout
+* 🏠 **Home screen** — Completely redesigned to feature a custom Clock and Music Player widget alongside your pinned apps.
+* 🔍 **App drawer** — Swipe horizontally from the home screen to reveal a full-screen drawer with real-time search.
+* ✨ **Animations** — Smooth slide-from-left animation when opening and closing the app drawer.
+* 📌 **Pinned apps** — Long-press apps in the drawer to pin them to the home screen. Includes persistence across reboots and a clean indicator dot for pinned status.
+* ⚫ **Minimalist aesthetic** — Sleek, pure black background for a distraction-free, battery-saving focus.
+* 🔄 **Auto-refresh** — App list updates automatically when apps are installed, removed, or changed.
+* ⬅️ **Back button suppressed** — Proper launcher behavior: back press does nothing on the home screen.
+* 📱 **Edge-to-edge UI** — Full-screen immersive layout.
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Language | Kotlin |
-| UI | Jetpack Compose + Material 3 |
-| Architecture | MVVM (ViewModel + StateFlow) |
-| Async | Kotlin Coroutines (viewModelScope + Dispatchers.IO) |
-| IDE | Android Studio |
-| Build | Gradle (Kotlin DSL) |
+| :--- | :--- |
+| **Language** | Kotlin |
+| **UI** | Jetpack Compose + Material 3 |
+| **Architecture** | MVVM (ViewModel + StateFlow) |
+| **Async** | Kotlin Coroutines (viewModelScope + Dispatchers.IO) |
+| **IDE** | Android Studio |
+| **Build** | Gradle (Kotlin DSL) |
 
 ---
 
 ## Project Structure
 
-```
+```text
 app/src/main/java/com/example/focuslauncher/
-├── MainActivity.kt          # Entry point; sets up wallpaper flag and back handler
-├── HomeScreen.kt            # Root composable; manages drawer state + swipe-up gesture
-├── HomeScreenContent.kt     # 4-column app grid for the home screen
-├── AppDrawerScreen.kt       # Full-screen drawer with search bar and app grid
-├── AppViewModel.kt          # MVVM ViewModel; loads apps, manages StateFlow
+├── MainActivity.kt          # Entry point; sets up immersive UI and back handler
+├── HomeScreen.kt            # Root composable; manages drawer state + horizontal swipe gesture
+├── HomeScreenContent.kt     # Clock, music player widget, and pinned apps row
+├── AppDrawerScreen.kt       # Animated drawer (slides from left) with search bar and app grid
+├── AppViewModel.kt          # MVVM ViewModel; loads apps, manages StateFlow and pinned persistence
 ├── AppUtils.kt              # PackageManager helpers: getInstalledApps, launchApp
-├── AppInfo.kt               # Data class: label, packageName, icon
+├── AppInfo.kt               # Data class: label, packageName, icon, isPinned status
 └── PackageReceiver.kt       # BroadcastReceiver for package install/remove events
-```
+Setup
+Requirements
+Android Studio (latest stable)
 
----
+JDK 21
 
-## Setup
+Android device or emulator running API 24+
 
-### Requirements
+Run
+Clone the repository:
 
-- Android Studio (latest stable)
-- JDK 21
-- Android device or emulator running API 24+
+Bash
+git clone [https://github.com/brandonsr/FocusLauncher.git](https://github.com/brandonsr/FocusLauncher.git)
+Open the project in Android Studio.
 
-### Run
+Connect a physical device (recommended — emulators don't fully support launcher testing).
 
-1. Clone the repository
-2. Open the project in Android Studio
-3. Connect a physical device (recommended — emulators don't fully support launcher testing)
-4. Click **Run ▶**
-5. When prompted, set **Focus Launcher** as your default home app
+Click Run ▶
 
----
+When prompted, set Focus Launcher as your default home app.
 
-## Architecture Overview
-
-```
+Architecture Overview
+Plaintext
 MainActivity
     └── HomeScreen (Compose)
-            ├── NestedScrollConnection  ← detects swipe-up to open drawer
-            ├── HomeScreenContent       ← LazyVerticalGrid of app icons
-            └── AppDrawerScreen         ← shown when showDrawer == true
+            ├── HorizontalSwipeHandler  ← detects left/right swipe to slide drawer
+            ├── HomeScreenContent       ← Clock, Music Player, and Pinned Apps
+            └── AppDrawerScreen         ← animated slide-in from left when shown
                     ├── SearchBar
                     └── LazyVerticalGrid (filtered apps)
 
 AppViewModel (AndroidViewModel)
-    ├── StateFlow<List<AppInfo>>   ← observed by HomeScreen
+    ├── StateFlow<List<AppInfo>>   ← observed by HomeScreen (includes pinned state)
     ├── loadApps()                 ← runs on Dispatchers.IO
+    ├── togglePinState()           ← manages pinning/unpinning and persistence
     └── PackageReceiver            ← triggers reload on package changes
-```
-
----
-
-## Manifest Configuration
-
+Manifest Configuration
 The launcher registers itself as a home screen via:
 
-```xml
+XML
 <activity android:launchMode="singleTask" android:stateNotNeeded="true">
     <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -93,23 +93,22 @@ The launcher registers itself as a home screen via:
         <category android:name="android.intent.category.DEFAULT" />
     </intent-filter>
 </activity>
-```
+Package visibility on API 30+ is handled via a <queries> block — no QUERY_ALL_PACKAGES permission required.
 
-Package visibility on API 30+ is handled via a `<queries>` block — no `QUERY_ALL_PACKAGES` permission required.
+Roadmap
+[x] Horizontal swipe gesture for app drawer
 
----
+[x] Open/close drawer animation
 
-## Roadmap
+[x] Pinned / favorite apps row on the home screen
 
-- [ ] Swipe-down gesture to close the app drawer
-- [ ] Open/close drawer animation
-- [ ] Pinned / favorite apps row on the home screen
-- [ ] Configurable grid column count
-- [ ] Adjustable icon size
-- [ ] Clock, date, and weather widget on the home screen
+[x] Clock and music player widgets
 
----
+[ ] Weather widget integration on the home screen
 
-## License
+[ ] Configurable grid column count in the app drawer
 
+[ ] Adjustable icon size settings
+
+License
 MIT
