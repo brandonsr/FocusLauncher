@@ -1,25 +1,20 @@
 package com.example.focuslauncher
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.drawable.toBitmap
 
 @Composable
 fun HomeScreenContent(
@@ -61,64 +56,32 @@ fun HomeScreenContent(
                 .padding(horizontal = 20.dp)
         )
 
-        // ── Push dock to bottom ──────────────────────────────────────────────
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
 
-        // ── Pinned dock ──────────────────────────────────────────────────────
+        // ── Pinned apps — centered text list ─────────────────────────────────
         if (pinnedApps.isNotEmpty()) {
-            HorizontalDivider(
-                color = Color.White.copy(alpha = 0.08f),
-                thickness = 0.5.dp
-            )
-            LazyRow(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.Center,
-                contentPadding = PaddingValues(horizontal = 16.dp)
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(pinnedApps, key = { it.packageName }) { app ->
-                    AppIcon(
-                        app = app,
-                        onClick = { launchApp(context, app.packageName) }
+                    Text(
+                        text = app.label,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Light,
+                        color = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier
+                            .clickable { launchApp(context, app.packageName) }
+                            .padding(horizontal = 32.dp, vertical = 11.dp)
                     )
                 }
             }
+        } else {
+            Spacer(Modifier.weight(1f))
         }
-    }
-}
-
-// ─── Shared AppIcon composable (used here + AppDrawerScreen) ─────────────────
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AppIcon(
-    app: AppInfo,
-    onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null
-) {
-    Column(
-        modifier = Modifier
-            .padding(8.dp)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            bitmap = app.icon.toBitmap(96, 96).asImageBitmap(),
-            contentDescription = app.label,
-            modifier = Modifier.size(56.dp)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = app.label,
-            fontSize = 11.sp,
-            color = Color.White,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
     }
 }

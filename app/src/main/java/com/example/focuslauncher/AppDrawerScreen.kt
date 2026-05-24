@@ -1,10 +1,11 @@
 package com.example.focuslauncher
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -13,7 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -35,43 +38,63 @@ fun AppDrawerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black)
     ) {
         SearchBar(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            contentPadding = PaddingValues(8.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(filteredApps, key = { it.packageName }) { app ->
                 val isPinned = app.packageName in pinnedPackages
-                Box {
-                    AppIcon(
-                        app = app,
-                        onClick = { onAppClick(app) },
-                        onLongClick = { onTogglePin(app) }
-                    )
-                    // Pin indicator dot in the top-right corner of the icon
-                    if (isPinned) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(end = 6.dp, top = 6.dp)
-                                .size(8.dp)
-                                .background(
-                                    color = Color(0xFF4FC3F7),
-                                    shape = RoundedCornerShape(50)
-                                )
-                        )
-                    }
-                }
+                AppListItem(
+                    app = app,
+                    isPinned = isPinned,
+                    onClick = { onAppClick(app) },
+                    onLongClick = { onTogglePin(app) }
+                )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun AppListItem(
+    app: AppInfo,
+    isPinned: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 32.dp, vertical = 13.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = app.label,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Light,
+            color = if (isPinned) Color.White else Color.White.copy(alpha = 0.7f)
+        )
+        if (isPinned) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .background(Color(0xFF4FC3F7), RoundedCornerShape(50))
+            )
         }
     }
 }

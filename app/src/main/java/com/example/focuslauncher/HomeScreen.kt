@@ -1,7 +1,6 @@
 package com.example.focuslauncher
 
 import android.content.Intent
-import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,10 +22,10 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
     val apps by appViewModel.apps.collectAsState()
     val pinnedPackages by appViewModel.pinnedPackages.collectAsState()
     val musicState by appViewModel.musicState.collectAsState()
-    var showDrawer by remember { mutableStateOf(false) }
 
-    // Poll listener status so the widget updates automatically after the user
-    // grants access in Settings and returns to the launcher.
+    var showDrawer by remember { mutableStateOf(false) }
+    var showFocusMode by remember { mutableStateOf(false) }
+
     var isListenerEnabled by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -37,6 +36,24 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
 
     val pinnedApps = remember(apps, pinnedPackages) {
         pinnedPackages.mapNotNull { pkg -> apps.find { it.packageName == pkg } }
+    }
+
+    // Focus mode takes over the whole screen
+    if (showFocusMode) {
+        FocusModeScreen(
+            musicState = musicState,
+            isListenerEnabled = isListenerEnabled,
+            onPlayPause = { appViewModel.playPause() },
+            onNext = { appViewModel.nextTrack() },
+            onPrevious = { appViewModel.previousTrack() },
+            onEnableListener = {
+                context.startActivity(
+                    Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                )
+            },
+            onExit = { showFocusMode = false }
+        )
+        return
     }
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
@@ -62,6 +79,10 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
                                 showDrawer = false
                                 dragAccumulator = 0f
                             }
+                            !showDrawer && dragAccumulator > swipeThreshold -> {
+                                showFocusMode = true
+                                dragAccumulator = 0f
+                            }
                         }
                     }
                 )
@@ -81,7 +102,6 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
             onPrevious   = { appViewModel.previousTrack() }
         )
 
-        // App drawer — slides in from the left on swipe-left
         AnimatedVisibility(
             visible = showDrawer,
             enter = slideInHorizontally { -it } + fadeIn(),
