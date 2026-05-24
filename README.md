@@ -1,23 +1,43 @@
 # Focus Launcher
 
-**Android Launcher that helps you not get distracted.**
+**An Android launcher designed to help you stay focused.**
 
-A clean, minimal Android home screen launcher built from scratch with **Kotlin** and **Jetpack Compose**. Designed with a pure black background and distraction-free interface to help you maintain focus.
+A clean, minimal home screen launcher built from scratch with **Kotlin** and **Jetpack Compose**. Pure black background, distraction-free interface, and a built-in Focus Mode with a Pomodoro timer.
 
-🌐 **[Visit the Website ](https://brandonsr.github.io/FocusLauncher/)**
+🌐 **[Visit the Website](https://brandonsr.github.io/FocusLauncher/)**
 
 ---
 
 ## Features
 
-* 🏠 **Home screen** — Completely redesigned to feature a custom Clock and Music Player widget alongside your pinned apps.
-* 🔍 **App drawer** — Swipe horizontally from the home screen to reveal a full-screen drawer with real-time search.
-* ✨ **Animations** — Smooth slide-from-left animation when opening and closing the app drawer.
-* 📌 **Pinned apps** — Long-press apps in the drawer to pin them to the home screen. Includes persistence across reboots and a clean indicator dot for pinned status.
-* ⚫ **Minimalist aesthetic** — Sleek, pure black background for a distraction-free, battery-saving focus.
-* 🔄 **Auto-refresh** — App list updates automatically when apps are installed, removed, or changed.
-* ⬅️ **Back button suppressed** — Proper launcher behavior: back press does nothing on the home screen.
-* 📱 **Edge-to-edge UI** — Full-screen immersive layout.
+### Home Screen
+- **Text-based pinned apps** — your pinned apps displayed as a clean centered list, no icons
+- **Clock widget** — live time and date, thin font, centered
+- **Music widget** — mini-player that reads your active media session; shows album art, track info, and playback controls
+- **Swipe left** — opens the app drawer
+- **Swipe right** — enters Focus Mode
+
+### App Drawer
+- **Text list** — all installed apps as a centered scrollable list, no icons
+- **Real-time search** — filters as you type
+- **Long-press to pin/unpin** — pins an app to the home screen; pinned apps show a small blue dot
+- **Animated slide-in** from the left
+
+### Focus Mode
+- **Swipe right** from the home screen to enter
+- **Pomodoro timer** — set any duration (1–180 min) before starting
+- **Landscape layout** — automatically rotates to landscape while active
+- **Left side** — countdown timer + End Session button
+- **Right side** — music widget + mini calendar
+- **Do Not Disturb** — activates DND when the session starts (requires one-time permission grant); restores normal mode when the session ends or the timer runs out
+- **Mini calendar** — current month view with today highlighted
+
+### General
+- Wallpaper visible behind the launcher
+- Back button suppressed (proper launcher behavior)
+- App list auto-refreshes on install/uninstall
+- Edge-to-edge immersive UI
+- Persisted pinned apps across reboots
 
 ---
 
@@ -28,7 +48,8 @@ A clean, minimal Android home screen launcher built from scratch with **Kotlin**
 | **Language** | Kotlin |
 | **UI** | Jetpack Compose + Material 3 |
 | **Architecture** | MVVM (ViewModel + StateFlow) |
-| **Async** | Kotlin Coroutines (viewModelScope + Dispatchers.IO) |
+| **Async** | Kotlin Coroutines (`viewModelScope` + `Dispatchers.IO`) |
+| **Media** | `NotificationListenerService` + `MediaController` |
 | **IDE** | Android Studio |
 | **Build** | Gradle (Kotlin DSL) |
 
@@ -38,77 +59,104 @@ A clean, minimal Android home screen launcher built from scratch with **Kotlin**
 
 ```text
 app/src/main/java/com/example/focuslauncher/
-├── MainActivity.kt          # Entry point; sets up immersive UI and back handler
-├── HomeScreen.kt            # Root composable; manages drawer state + horizontal swipe gesture
-├── HomeScreenContent.kt     # Clock, music player widget, and pinned apps row
-├── AppDrawerScreen.kt       # Animated drawer (slides from left) with search bar and app grid
-├── AppViewModel.kt          # MVVM ViewModel; loads apps, manages StateFlow and pinned persistence
-├── AppUtils.kt              # PackageManager helpers: getInstalledApps, launchApp
-├── AppInfo.kt               # Data class: label, packageName, icon, isPinned status
-└── PackageReceiver.kt       # BroadcastReceiver for package install/remove events
-Setup
-Requirements
-Android Studio (latest stable)
+├── MainActivity.kt                 # Entry point; wallpaper flag, back handler, edge-to-edge
+├── HomeScreen.kt                   # Root composable; gesture routing (drawer / focus mode)
+├── HomeScreenContent.kt            # Clock, music widget, pinned apps text list
+├── AppDrawerScreen.kt              # Text list drawer with search and pin indicators
+├── FocusModeScreen.kt              # Pomodoro timer, landscape layout, DND, mini calendar
+├── AppViewModel.kt                 # MVVM ViewModel; apps StateFlow, pin persistence, music controls
+├── AppUtils.kt                     # getInstalledApps(), launchApp()
+├── AppInfo.kt                      # Data class: label, packageName, icon
+├── PackageReceiver.kt              # BroadcastReceiver; refreshes app list on package changes
+├── ClockWidget.kt                  # Live clock composable (1-second tick)
+├── MusicWidget.kt                  # Three-state mini-player composable
+├── MusicRepository.kt              # Singleton StateFlow for playback state + MediaController
+└── MusicNotificationListener.kt    # NotificationListenerService; extracts MediaSession token
+```
 
-JDK 21
+---
 
-Android device or emulator running API 24+
+## Setup
 
-Run
-Clone the repository:
+**Requirements**
+- Android Studio (latest stable)
+- JDK 21
+- Android device or emulator running API 24+
 
-Bash
-git clone [https://github.com/brandonsr/FocusLauncher.git](https://github.com/brandonsr/FocusLauncher.git)
-Open the project in Android Studio.
+**Run**
+```bash
+git clone https://github.com/brandonsr/FocusLauncher.git
+```
+1. Open the project in Android Studio
+2. Connect a physical device (recommended — emulators don't fully support launcher behavior)
+3. Click **Run ▶**
+4. When prompted, set **Focus Launcher** as your default home app
 
-Connect a physical device (recommended — emulators don't fully support launcher testing).
+**Optional permissions** (prompted in-app)
+- **Notification Listener** — required for the music widget to read your active media session
+- **Do Not Disturb Access** — required for Focus Mode to silence notifications during a session
 
-Click Run ▶
+---
 
-When prompted, set Focus Launcher as your default home app.
+## Gesture Reference
 
-Architecture Overview
-Plaintext
+| Gesture | Action |
+| :--- | :--- |
+| Swipe left | Open app drawer |
+| Swipe right (drawer open) | Close drawer |
+| Swipe right (home) | Enter Focus Mode |
+| Tap app (drawer) | Launch app |
+| Long-press app (drawer) | Pin / unpin app |
+| Tap app (home list) | Launch app |
+
+---
+
+## Architecture Overview
 MainActivity
-    └── HomeScreen (Compose)
-            ├── HorizontalSwipeHandler  ← detects left/right swipe to slide drawer
-            ├── HomeScreenContent       ← Clock, Music Player, and Pinned Apps
-            └── AppDrawerScreen         ← animated slide-in from left when shown
-                    ├── SearchBar
-                    └── LazyVerticalGrid (filtered apps)
+└── HomeScreen
+├── Swipe left  → AppDrawerScreen
+│       ├── SearchBar
+│       └── LazyColumn (text list, long-press to pin)
+├── Swipe right → FocusModeScreen
+│       ├── Setup (duration input, DND prompt)
+│       └── Active layout (landscape)
+│               ├── Left:  Pomodoro countdown + End Session
+│               └── Right: MusicWidget + MiniCalendar
+└── HomeScreenContent
+├── ClockWidget
+├── MusicWidget
+└── LazyColumn (pinned apps, text list)
+AppViewModel
+├── StateFlow<List<AppInfo>>     ← app list, loaded on Dispatchers.IO
+├── StateFlow<List<String>>      ← pinned packages, persisted via SharedPreferences
+├── StateFlow<MusicState?>       ← forwarded from MusicRepository singleton
+└── PackageReceiver              ← triggers reload on package changes
+MusicNotificationListener (NotificationListenerService)
+└── MusicRepository (singleton StateFlow)
+---
 
-AppViewModel (AndroidViewModel)
-    ├── StateFlow<List<AppInfo>>   ← observed by HomeScreen (includes pinned state)
-    ├── loadApps()                 ← runs on Dispatchers.IO
-    ├── togglePinState()           ← manages pinning/unpinning and persistence
-    └── PackageReceiver            ← triggers reload on package changes
-Manifest Configuration
-The launcher registers itself as a home screen via:
+## Manifest Notes
 
-XML
-<activity android:launchMode="singleTask" android:stateNotNeeded="true">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.HOME" />
-        <category android:name="android.intent.category.DEFAULT" />
-    </intent-filter>
-</activity>
-Package visibility on API 30+ is handled via a <queries> block — no QUERY_ALL_PACKAGES permission required.
+- Launcher registered with `HOME` + `DEFAULT` categories; run config set to **Nothing**
+- `android:configChanges="orientation|screenSize|..."` on `MainActivity` prevents Activity recreation when Focus Mode rotates to landscape
+- `<queries>` block handles package visibility on API 30+ without `QUERY_ALL_PACKAGES`
 
-Roadmap
-[x] Horizontal swipe gesture for app drawer
+---
 
-[x] Open/close drawer animation
+## Roadmap
 
-[x] Pinned / favorite apps row on the home screen
+- [x] Swipe gesture for app drawer (left/right)
+- [x] Animated drawer slide-in
+- [x] Pinned apps on home screen
+- [x] Clock and music widgets
+- [x] Text-only app list (drawer + home screen)
+- [x] Focus Mode (Pomodoro + landscape + DND + mini calendar)
+- [ ] Weather widget on home screen
+- [ ] Configurable grid/list settings
+- [ ] Adjustable font size
 
-[x] Clock and music player widgets
+---
 
-[ ] Weather widget integration on the home screen
+## License
 
-[ ] Configurable grid column count in the app drawer
-
-[ ] Adjustable icon size settings
-
-License
 MIT
