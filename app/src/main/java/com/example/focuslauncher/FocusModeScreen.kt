@@ -5,9 +5,15 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.database.Cursor
+import android.provider.CalendarContract
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -20,11 +26,66 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
+
+// ── Data Class for Events ──────────────────────────────────────────────────
+data class CalendarEvent(val title: String, val startTime: Long)
+
+// ── Helper Function to Fetch Events ─────────────────────────────────────────
+fun getTodayEvents(context: Context): List<CalendarEvent> {
+    val events = mutableListOf<CalendarEvent>()
+    val calendar = Calendar.getInstance()
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    val startOfDay = calendar.timeInMillis
+
+    calendar.set(Calendar.HOUR_OF_DAY, 23)
+    calendar.set(Calendar.MINUTE, 59)
+    val endOfDay = calendar.timeInMillis
+
+    val projection = arrayOf(
+        CalendarContract.Events.TITLE,
+        CalendarContract.Events.DTSTART
+    )
+
+    val selection = "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTSTART} <= ?"
+    val selectionArgs = arrayOf(startOfDay.toString(), endOfDay.toString())
+
+    try {
+        val cursor: Cursor? = context.contentResolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            "${CalendarContract.Events.DTSTART} ASC"
+        )
+
+        cursor?.use {
+            val titleIndex = it.getColumnIndexOrThrow(CalendarContract.Events.TITLE)
+            val startIndex = it.getColumnIndexOrThrow(CalendarContract.Events.DTSTART)
+
+            while (it.moveToNext()) {
+                events.add(
+                    CalendarEvent(
+                        title = it.getString(titleIndex),
+                        startTime = it.getLong(startIndex)
+                    )
+                )
+            }
+        }
+    } catch (e: SecurityException) {
+        // Permission was not granted
+    }
+    return events
+}
 
 @Composable
 fun FocusModeScreen(
@@ -57,6 +118,28 @@ fun FocusModeScreen(
     var timerStarted by remember { mutableStateOf(false) }
     var timerRunning by remember { mutableStateOf(false) }
     var secondsRemaining by remember { mutableIntStateOf(0) }
+
+    // Calendar state
+    var hasCalendarPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.READ_CALENDAR
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> hasCalendarPermission = granted }
+    )
+
+    // Request calendar permission on launch if needed
+    LaunchedEffect(Unit) {
+        if (!hasCalendarPermission) {
+            calendarPermissionLauncher.launch(android.Manifest.permission.READ_CALENDAR)
+        }
+    }
 
     LaunchedEffect(timerRunning) {
         if (timerRunning) {
@@ -221,7 +304,7 @@ fun FocusModeScreen(
                         .background(Color.White.copy(alpha = 0.08f))
                 )
 
-                // ── RIGHT: music widget + calendar ────────────────────────────
+                // ── RIGHT: music widget + scrollable calendar ────────────────────────────
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -239,17 +322,98 @@ fun FocusModeScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    MiniCalendar(
+                    // Scrollable section for Calendar and Events
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .weight(1f) // Takes remaining space
                             .background(
                                 Color.White.copy(alpha = 0.07f),
                                 RoundedCornerShape(20.dp)
                             )
                             .padding(horizontal = 16.dp, vertical = 12.dp)
-                    )
+                    ) {
+                        item {
+                            MiniCalendar(modifier = Modifier.fillMaxWidth())
+                            Spacer(Modifier.height(16.dp))
+
+                            // Events Header
+                            Text(
+                                "Today's Agenda",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+
+                            if (!hasCalendarPermission) {
+                                Text(
+                                    "Calendar permission required to view events.",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.3f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                                )
+                            }
+                        }
+
+                        if (hasCalendarPermission) {
+                            val events = getTodayEvents(context)
+                            if (events.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No events today",
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.3f),
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                }
+                            } else {
+                                items(events) { event ->
+                                    EventItem(event)
+                                }
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+// ── Individual Event Item Composable ─────────────────────────────────────────
+
+@Composable
+fun EventItem(event: CalendarEvent) {
+    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+    val formattedTime = timeFormat.format(Date(event.startTime))
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(Color(0xFF4FC3F7), CircleShape)
+        )
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(
+                text = event.title,
+                fontSize = 13.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = formattedTime,
+                fontSize = 11.sp,
+                color = Color.White.copy(alpha = 0.45f)
+            )
         }
     }
 }
