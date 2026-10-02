@@ -36,59 +36,9 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-// ── Data Class for Events ──────────────────────────────────────────────────
-data class CalendarEvent(val title: String, val startTime: Long)
-
-// ── Helper Function to Fetch Events ─────────────────────────────────────────
-fun getTodayEvents(context: Context): List<CalendarEvent> {
-    val events = mutableListOf<CalendarEvent>()
-    val calendar = Calendar.getInstance()
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    val startOfDay = calendar.timeInMillis
-
-    calendar.set(Calendar.HOUR_OF_DAY, 23)
-    calendar.set(Calendar.MINUTE, 59)
-    val endOfDay = calendar.timeInMillis
-
-    val projection = arrayOf(
-        CalendarContract.Events.TITLE,
-        CalendarContract.Events.DTSTART
-    )
-
-    val selection = "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTSTART} <= ?"
-    val selectionArgs = arrayOf(startOfDay.toString(), endOfDay.toString())
-
-    try {
-        val cursor: Cursor? = context.contentResolver.query(
-            CalendarContract.Events.CONTENT_URI,
-            projection,
-            selection,
-            selectionArgs,
-            "${CalendarContract.Events.DTSTART} ASC"
-        )
-
-        cursor?.use {
-            val titleIndex = it.getColumnIndexOrThrow(CalendarContract.Events.TITLE)
-            val startIndex = it.getColumnIndexOrThrow(CalendarContract.Events.DTSTART)
-
-            while (it.moveToNext()) {
-                events.add(
-                    CalendarEvent(
-                        title = it.getString(titleIndex),
-                        startTime = it.getLong(startIndex)
-                    )
-                )
-            }
-        }
-    } catch (e: SecurityException) {
-        // Permission was not granted
-    }
-    return events
-}
-
 @Composable
 fun FocusModeScreen(
+    appViewModel: AppViewModel,
     musicState: MusicState?,
     isListenerEnabled: Boolean,
     onPlayPause: () -> Unit,
@@ -102,6 +52,8 @@ fun FocusModeScreen(
     val notificationManager = remember {
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
+
+    val todayEvents by appViewModel.todayEvents.collectAsState()
 
     DisposableEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -138,6 +90,15 @@ fun FocusModeScreen(
     LaunchedEffect(Unit) {
         if (!hasCalendarPermission) {
             calendarPermissionLauncher.launch(android.Manifest.permission.READ_CALENDAR)
+        } else {
+            appViewModel.loadTodayEvents()
+        }
+    }
+
+    // Reload events if permission is granted while screen is open
+    LaunchedEffect(hasCalendarPermission) {
+        if (hasCalendarPermission) {
+            appViewModel.loadTodayEvents()
         }
     }
 
@@ -358,8 +319,7 @@ fun FocusModeScreen(
                         }
 
                         if (hasCalendarPermission) {
-                            val events = getTodayEvents(context)
-                            if (events.isEmpty()) {
+                            if (todayEvents.isEmpty()) {
                                 item {
                                     Text(
                                         "No events today",
@@ -369,7 +329,7 @@ fun FocusModeScreen(
                                     )
                                 }
                             } else {
-                                items(events) { event ->
+                                items(todayEvents) { event ->
                                     EventItem(event)
                                 }
                             }

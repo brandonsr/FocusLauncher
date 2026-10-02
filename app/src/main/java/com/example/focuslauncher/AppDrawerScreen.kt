@@ -1,5 +1,10 @@
 package com.example.focuslauncher
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -16,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,7 +35,9 @@ fun AppDrawerScreen(
     onDismiss: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
+    var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
+    val context = LocalContext.current
+ever
     val filteredApps = remember(searchQuery, apps) {
         if (searchQuery.isBlank()) apps
         else apps.filter { it.label.contains(searchQuery, ignoreCase = true) }
@@ -39,6 +47,7 @@ fun AppDrawerScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .systemBarsPadding()
     ) {
         SearchBar(
             query = searchQuery,
@@ -48,19 +57,59 @@ fun AppDrawerScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(filteredApps, key = { it.packageName }) { app ->
-                val isPinned = app.packageName in pinnedPackages
-                AppListItem(
-                    app = app,
-                    isPinned = isPinned,
-                    onClick = { onAppClick(app) },
-                    onLongClick = { onTogglePin(app) }
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(filteredApps, key = { it.packageName }) { app ->
+                    val isPinned = app.packageName in pinnedPackages
+                    AppListItem(
+                        app = app,
+                        isPinned = isPinned,
+                        onClick = { onAppClick(app) },
+                        onLongClick = { selectedAppForMenu = app }
+                    )
+                }
+            }
+
+            selectedAppForMenu?.let { app ->
+                DropdownMenu(
+                    expanded = true,
+                    onDismissRequest = { selectedAppForMenu = null },
+                    modifier = Modifier.background(Color.DarkGray)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("App Details", color = Color.White) },
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.parse("package:${app.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                            selectedAppForMenu = null
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (app.packageName in pinnedPackages) "Remove from Home Screen" else "Add to Home Screen", color = Color.White) },
+                        onClick = {
+                            onTogglePin(app)
+                            selectedAppForMenu = null
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Uninstall", color = Color.Red) },
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DELETE).apply {
+                                data = Uri.parse("package:${app.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                            selectedAppForMenu = null
+                        }
+                    )
+                }
             }
         }
     }

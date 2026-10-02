@@ -6,15 +6,22 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import kotlin.math.abs
+
+enum class GestureAxis { NONE, HORIZONTAL, VERTICAL }
 
 @Composable
 fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
@@ -25,12 +32,38 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
 
     var showDrawer by remember { mutableStateOf(false) }
     var showFocusMode by remember { mutableStateOf(false) }
+    var showScreenTime by remember { mutableStateOf(false) }
 
     var isListenerEnabled by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         while (true) {
             isListenerEnabled = appViewModel.isNotificationListenerEnabled()
             delay(2000L)
+        }
+    }
+
+    // Performance optimization: Load screen time stats only when screen is shown
+    LaunchedEffect(showScreenTime) {
+        if (showScreenTime) {
+            appViewModel.loadScreenTimeStats()
+        }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isListenerEnabled = appViewModel.isNotificationListenerEnabled()
+                appViewModel.loadScreenTimeStats()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Initial check
+        isListenerEnabled = appViewModel.isNotificationListenerEnabled()
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -41,6 +74,7 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
     // Focus mode takes over the whole screen
     if (showFocusMode) {
         FocusModeScreen(
+            appViewModel = appViewModel,
             musicState = musicState,
             isListenerEnabled = isListenerEnabled,
             onPlayPause = { appViewModel.playPause() },
@@ -56,32 +90,67 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
         return
     }
 
-    var dragAccumulator by remember { mutableFloatStateOf(0f) }
+    var dragAccumulatorX by remember { mutableFloatStateOf(0f) }
+    var dragAccumulatorY by remember { mutableFloatStateOf(0f) }
+    var lockedAxis by remember { mutableStateOf(GestureAxis.NONE) }
     val swipeThreshold = 80f
+    val axisLockThreshold = 30f
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(showDrawer) {
-                detectHorizontalDragGestures(
-                    onDragStart  = { dragAccumulator = 0f },
-                    onDragEnd    = { dragAccumulator = 0f },
-                    onDragCancel = { dragAccumulator = 0f },
-                    onHorizontalDrag = { change, dragAmount ->
+                detectDragGestures(
+                    onDragStart = {
+                        dragAccumulatorX = 0f
+                        dragAccumulatorY = 0f
+                        lockedAxis = GestureAxis.NONE
+                    },
+                    onDragEnd = {
+                        dragAccumulatorX = 0f
+                        dragAccumulatorY = 0f
+                        lockedAxis = GestureAxis.NONE
+                    },
+                    onDragCancel = {
+                        dragAccumulatorX = 0f
+                        dragAccumulatorY = 0f
+                        lockedAxis = GestureAxis.NONE
+                    },
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        dragAccumulator += dragAmount
-                        when {
-                            !showDrawer && dragAccumulator < -swipeThreshold -> {
-                                showDrawer = true
-                                dragAccumulator = 0f
+
+                        if (lockedAxis == GestureAxis.NONE) {
+                            dragAccumulatorX += dragAmount.x
+                            dragAccumulatorY += dragAmount.y
+
+                            if (abs(dragAccumulatorX) > axisLockThreshold && abs(dragAccumulatorX) > abs(dragAccumulatorY)) {
+                                lockedAxis = GestureAxis.HORIZONTAL
+                            } else if (abs(dragAccumulatorY) > axisLockThreshold && abs(dragAccumulatorY) > abs(dragAccumulatorX)) {
+                                lockedAxis = GestureAxis.VERTICAL
                             }
-                            showDrawer && dragAccumulator > swipeThreshold -> {
-                                showDrawer = false
-                                dragAccumulator = 0f
+                        } else if (lockedAxis == GestureAxis.HORIZONTAL) {
+                            dragAccumulatorX += dragAmount.x
+
+                            when {
+                                !showDrawer && dragAccumulatorX < -swipeThreshold -> {
+                                    showDrawer = true
+                                    dragAccumulatorX = 0f
+                                }
+                                showDrawer && dragAccumulatorX > swipeThreshold -> {
+                                    showDrawer = false
+                                    dragAccumulatorX = 0f
+                                }
+                                !showDrawer && dragAccumulatorX > swipeThreshold -> {
+                                    showFocusMode = true
+                                    dragAccumulatorX = 0f
+                                }
                             }
-                            !showDrawer && dragAccumulator > swipeThreshold -> {
-                                showFocusMode = true
-                                dragAccumulator = 0f
+                        } else if (lockedAxis == GestureAxis.VERTICAL) {
+                            dragAccumulatorY += dragAmount.y
+
+                            if (!showDrawer && dragAccumulatorY > swipeThreshold) {
+                                showScreenTime = true
+                                dragAccumulatorY = 0f
                             }
                         }
                     }
@@ -116,6 +185,20 @@ fun HomeScreen(appViewModel: AppViewModel = viewModel()) {
                 },
                 onTogglePin = { app -> appViewModel.togglePin(app.packageName) },
                 onDismiss   = { showDrawer = false }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = showScreenTime,
+            enter = slideInVertically { -it } + fadeIn(),
+            exit = slideOutVertically { -it } + fadeOut()
+        ) {
+            ScreenTimeScreen(
+                stats = appViewModel.screenTimeStats.collectAsState().value,
+                onDismiss = { showScreenTime = false },
+                onEnablePermission = {
+                    appViewModel.requestUsageStatsPermission()
+                }
             )
         }
     }

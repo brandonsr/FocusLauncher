@@ -3,7 +3,9 @@ package com.example.focuslauncher
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -21,13 +23,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _pinnedPackages = MutableStateFlow<List<String>>(loadPinnedPackages())
     val pinnedPackages: StateFlow<List<String>> = _pinnedPackages
 
+    private val _todayEvents = MutableStateFlow<List<CalendarEvent>>(emptyList())
+    val todayEvents: StateFlow<List<CalendarEvent>> = _todayEvents
+
+    private val _screenTimeStats = MutableStateFlow<ScreenTimeStats?>(null)
+    val screenTimeStats: StateFlow<ScreenTimeStats?> = _screenTimeStats
+
     // Music state flows from the singleton updated by MusicNotificationListener
     val musicState: StateFlow<MusicState?> = MusicRepository.state
 
     private val packageReceiver = PackageReceiver(onPackageChanged = { loadApps() })
+    private val usageStatsRepository = UsageStatsRepository()
 
     init {
         loadApps()
+        loadTodayEvents()
+        loadScreenTimeStats()
         registerReceiver()
     }
 
@@ -35,6 +46,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             _apps.value = getInstalledApps(getApplication())
         }
+    }
+
+    fun loadTodayEvents() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _todayEvents.value = getTodayEvents(getApplication())
+        }
+    }
+
+    fun loadScreenTimeStats() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _screenTimeStats.value = usageStatsRepository.getTodayStats(getApplication())
+        }
+    }
+
+    fun requestUsageStatsPermission() {
+        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        getApplication<Application>().startActivity(intent)
+    }
+
+    fun hasUsageStatsPermission(): Boolean {
+        return usageStatsRepository.hasPermission(getApplication())
     }
 
     fun togglePin(packageName: String) {
@@ -72,9 +105,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun registerReceiver() {
-        getApplication<Application>().registerReceiver(
+        ContextCompat.registerReceiver(
+            getApplication(),
             packageReceiver,
-            PackageReceiver.createIntentFilter()
+            PackageReceiver.createIntentFilter(),
+            ContextCompat.RECEIVER_EXPORTED
         )
     }
 

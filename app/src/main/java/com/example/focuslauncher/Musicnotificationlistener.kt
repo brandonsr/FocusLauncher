@@ -8,9 +8,16 @@ import android.media.session.PlaybackState
 import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 
 class MusicNotificationListener : NotificationListenerService() {
 
+    private val serviceScope = CoroutineScope(Dispatchers.Main)
+    private var currentSbnKey: String? = null
     private var activeCallback: MediaController.Callback? = null
     private var activeController: MediaController? = null
 
@@ -19,15 +26,25 @@ class MusicNotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        if (MusicRepository.state.value != null) {
-            MusicRepository.clear()
-            detachCallback()
+        if (sbn.key != currentSbnKey) return
+
+        serviceScope.launch {
+            delay(2500L) // Delayed clear to prevent flickering
+            if (sbn.key == currentSbnKey) {
+                MusicRepository.clear()
+                detachCallback()
+            }
         }
     }
 
     override fun onListenerDisconnected() {
         MusicRepository.clear()
         detachCallback()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 
     private fun tryExtractMedia(sbn: StatusBarNotification) {
@@ -46,6 +63,7 @@ class MusicNotificationListener : NotificationListenerService() {
 
         token ?: return
 
+        currentSbnKey = sbn.key
         detachCallback()
 
         val controller = MediaController(this, token)
