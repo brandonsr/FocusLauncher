@@ -16,11 +16,15 @@ A clean, minimal home screen launcher built from scratch with **Kotlin** and **J
 - **Music widget** — mini-player that reads your active media session; shows album art, track info, and playback controls
 - **Swipe left** — opens the app drawer
 - **Swipe right** — enters Focus Mode
+- **Swipe up** — opens screen time statistics
 
 ### App Drawer
 - **Text list** — all installed apps as a centered scrollable list, no icons
 - **Real-time search** — filters as you type
-- **Long-press to pin/unpin** — pins an app to the home screen; pinned apps show a small blue dot
+- **App Management** — long-press any app to:
+    - **Add/Remove from Home Screen** (Pin/Unpin)
+    - **View App Details** (Open system settings)
+    - **Uninstall App**
 - **Animated slide-in** from the left
 
 ### Focus Mode
@@ -60,14 +64,16 @@ A clean, minimal home screen launcher built from scratch with **Kotlin** and **J
 ```text
 app/src/main/java/com/example/focuslauncher/
 ├── MainActivity.kt                 # Entry point; wallpaper flag, back handler, edge-to-edge
-├── HomeScreen.kt                   # Root composable; gesture routing (drawer / focus mode)
+├── HomeScreen.kt                   # Root composable; gesture routing (drawer / focus mode / screen time)
 ├── HomeScreenContent.kt            # Clock, music widget, pinned apps text list
-├── AppDrawerScreen.kt              # Text list drawer with search and pin indicators
+├── AppDrawerScreen.kt              # Text list drawer with search and app management menu
 ├── FocusModeScreen.kt              # Pomodoro timer, landscape layout, DND, mini calendar
-├── AppViewModel.kt                 # MVVM ViewModel; apps StateFlow, pin persistence, music controls
+├── ScreenTimeScreen.kt             # Daily app usage statistics view
+├── AppViewModel.kt                 # MVVM ViewModel; apps StateFlow, pin persistence, music controls, usage stats
 ├── AppUtils.kt                     # getInstalledApps(), launchApp()
 ├── AppInfo.kt                      # Data class: label, packageName, icon
 ├── PackageReceiver.kt              # BroadcastReceiver; refreshes app list on package changes
+├── UsageStatsRepository.kt         # Logic for querying Android UsageStatsManager
 ├── ClockWidget.kt                  # Live clock composable (1-second tick)
 ├── MusicWidget.kt                  # Three-state mini-player composable
 ├── MusicRepository.kt              # Singleton StateFlow for playback state + MediaController
@@ -95,6 +101,7 @@ git clone https://github.com/brandonsr/FocusLauncher.git
 **Optional permissions** (prompted in-app)
 - **Notification Listener** — required for the music widget to read your active media session
 - **Do Not Disturb Access** — required for Focus Mode to silence notifications during a session
+- **Usage Access** — required for Screen Time statistics
 
 ---
 
@@ -105,8 +112,9 @@ git clone https://github.com/brandonsr/FocusLauncher.git
 | Swipe left | Open app drawer |
 | Swipe right (drawer open) | Close drawer |
 | Swipe right (home) | Enter Focus Mode |
+| Swipe up (home) | View Screen Time stats |
 | Tap app (drawer) | Launch app |
-| Long-press app (drawer) | Pin / unpin app |
+| Long-press app (drawer) | Open App Management Menu |
 | Tap app (home list) | Launch app |
 
 ---
@@ -114,23 +122,26 @@ git clone https://github.com/brandonsr/FocusLauncher.git
 ## Architecture Overview
 MainActivity
 └── HomeScreen
-├── Swipe left  → AppDrawerScreen
-│       ├── SearchBar
-│       └── LazyColumn (text list, long-press to pin)
-├── Swipe right → FocusModeScreen
-│       ├── Setup (duration input, DND prompt)
-│       └── Active layout (landscape)
-│               ├── Left:  Pomodoro countdown + End Session
-│               └── Right: MusicWidget + MiniCalendar
-└── HomeScreenContent
-├── ClockWidget
-├── MusicWidget
-└── LazyColumn (pinned apps, text list)
+    ├── Swipe left  → AppDrawerScreen
+    │       ├── SearchBar
+    │       └── LazyColumn (text list, long-press for details/uninstall/pin)
+    ├── Swipe right → FocusModeScreen
+    │       ├── Setup (duration input, DND prompt)
+    │       └── Active layout (landscape)
+    │               ├── Left:  Pomodoro countdown + End Session
+    │               └── Right: MusicWidget + MiniCalendar
+    ├── Swipe up    → ScreenTimeScreen
+    │       └── Usage statistics list
+    └── HomeScreenContent
+        ├── ClockWidget
+        ├── MusicWidget
+        └── LazyColumn (pinned apps, text list)
 AppViewModel
-├── StateFlow<List<AppInfo>>     ← app list, loaded on Dispatchers.IO
-├── StateFlow<List<String>>      ← pinned packages, persisted via SharedPreferences
-├── StateFlow<MusicState?>       ← forwarded from MusicRepository singleton
-└── PackageReceiver              ← triggers reload on package changes
+    ├── StateFlow<List<AppInfo>>     ← app list, loaded on Dispatchers.IO
+    ├── StateFlow<List<String>>      ← pinned packages, persisted via SharedPreferences
+    ├── StateFlow<MusicState?>       ← forwarded from MusicRepository singleton
+    ├── StateFlow<ScreenTimeStats?>  ← usage stats from UsageStatsRepository
+    └── PackageReceiver              ← triggers reload on package changes
 MusicNotificationListener (NotificationListenerService)
 └── MusicRepository (singleton StateFlow)
 ---
@@ -151,6 +162,8 @@ MusicNotificationListener (NotificationListenerService)
 - [x] Clock and music widgets
 - [x] Text-only app list (drawer + home screen)
 - [x] Focus Mode (Pomodoro + landscape + DND + mini calendar)
+- [x] Screen Time statistics
+- [x] App management menu (Uninstall, Details)
 - [ ] Weather widget on home screen
 - [ ] Configurable grid/list settings
 - [ ] Adjustable font size
